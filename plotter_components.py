@@ -1,13 +1,16 @@
 import numpy as np
 import pandas as pd
+pd.set_option('display.height', 500)
+pd.set_option('display.max_rows', 500)
 from collections import OrderedDict
 import datetime, time
 
 import matplotlib.pyplot as plt
 
-from databroker import get_events, get_table, DataBroker as DB
+from databroker import get_events, get_table, DataBroker as db
 
 import ipywidgets as widgets
+
 
 # Functions
 def stopped(header):
@@ -45,7 +48,7 @@ def get_scan_desc(header):
 # Widgets
 
 today_string = str(datetime.datetime.now().date())
-DB_search_widget = widgets.Text(description='Database search',
+db_search_widget = widgets.Text(description='Database search',
                                 value='since=\'{}\''.format(today_string))
 refresh_headers_widget = widgets.Button(description='Refresh')
 
@@ -63,17 +66,21 @@ plot_button = widgets.Button(description='Plot')
 
 clear_button = widgets.Button(description='Clear')
 
-starting_values_display = widgets.Textarea(width='500px')
+baseline_button = widgets.Button(description='Display baseline')
+
+baseline_display = widgets.HTML('Baseline')
+#starting_values_display = widgets.Textarea(min_width='1500px')
+
 
 # bindings
 
 def wrap_refresh(change):
     try:
-        query = eval("dict({})".format(DB_search_widget.value))
-        headers = DB(**query)
+        query = eval("dict({})".format(db_search_widget.value))
+        headers = db(**query)
     except NameError:
         headers = []
-        DB_search_widget.value += " -- is an invalid search"
+        db_search_widget.value += " -- is an invalid search"
     
     scan_id_dict = get_scan_id_dict(headers)
     select_scan_id_widget.options = scan_id_dict
@@ -111,17 +118,22 @@ def wrap_plotit(change):
         y = table[select_y_widget.value].values
     
     label= header.start['scan_id']
-    #print("x is {}".format(x))
     plt.plot(x, y, label=label)
     plt.xlabel(select_x_widget.value)
     plt.ylabel(select_y_widget.value)
     plt.legend()
-    
-    baseline_table = header.table(stream_name='baseline')
-    start_values = pd.Series([getattr(baseline_table, key).values[0] for key in baseline_table.keys()], index=baseline_table.keys())
-    starting_values_display.value = start_values.sort_index().to_string()
 
 plot_button.on_click(wrap_plotit)
+
+
+def wrap_baseline(change):
+    header = select_scan_id_widget.value
+    baseline_table = header.table(stream_name='baseline')
+    baseline_table.index=['Before', "After"]
+    title = "<strong> Scan_id {} baseline </strong>".format(header.start['scan_id'])
+    baseline_display.value = title + baseline_table.transpose().to_html()
+
+baseline_button.on_click(wrap_baseline)
 
 def wrap_clearit(change):
     plt.cla()
