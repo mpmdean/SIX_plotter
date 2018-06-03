@@ -117,7 +117,8 @@ def wrap_plotit(change):
     plt.ylabel(select_y_widget.value)
     plt.legend()
     
-    start_values = pd.Series([getattr(table, key).values[0] for key in table.keys()], index=table.keys())
+    baseline_table = header.table(stream_name='baseline')
+    start_values = pd.Series([getattr(baseline_table, key).values[0] for key in baseline_table.keys()], index=baseline_table.keys())
     starting_values_display.value = start_values.sort_index().to_string()
 
 plot_button.on_click(wrap_plotit)
