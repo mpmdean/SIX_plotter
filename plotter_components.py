@@ -6,10 +6,13 @@ from collections import OrderedDict
 import datetime, time
 
 import matplotlib.pyplot as plt
+from cycler import cycle
 
 from databroker import get_events, get_table, DataBroker as db
 
 import ipywidgets as widgets
+
+markers = cycle(['o', 's', '^', 'v', 'p', '<', '>', 'h'])
 
 
 # Functions
@@ -48,11 +51,12 @@ def get_scan_desc(header):
 # Widgets
 
 today_string = str(datetime.datetime.now().date())
-db_search_widget = widgets.Text(description='Database search',
+db_search_widget = widgets.Text(description='DB search',
                                 value='since=\'{}\''.format(today_string))
-refresh_headers_widget = widgets.Button(description='Refresh')
 
-select_scan_id_widget = widgets.Select(description='Select scan id')
+#refresh_headers_widget = widgets.Button(description='Refresh')
+
+select_scan_id_widget = widgets.Select(description='Select uid')
 
 select_x_widget = widgets.Dropdown(description='x')
 
@@ -85,8 +89,8 @@ def wrap_refresh(change):
     scan_id_dict = get_scan_id_dict(headers)
     select_scan_id_widget.options = scan_id_dict
 
-    
-refresh_headers_widget.on_click(wrap_refresh)
+db_search_widget.on_submit(wrap_refresh)
+#refresh_headers_widget.on_click(wrap_refresh)
     
 def wrap_select_scan_id(change):
     keys = get_keys(select_scan_id_widget.value)
@@ -118,10 +122,12 @@ def wrap_plotit(change):
         y = table[select_y_widget.value].values
     
     label= header.start['scan_id']
-    plt.plot(x, y, label=label)
-    plt.xlabel(select_x_widget.value)
-    plt.ylabel(select_y_widget.value)
-    plt.legend()
+    
+    ax = plt.gca()
+    ax.plot(x, y, marker=next(markers), label=label)
+    ax.set_xlabel(select_x_widget.value)
+    ax.set_ylabel(select_y_widget.value)
+    ax.legend()
 
 plot_button.on_click(wrap_plotit)
 
@@ -136,7 +142,7 @@ def wrap_baseline(change):
 baseline_button.on_click(wrap_baseline)
 
 def wrap_clearit(change):
-    plt.cla()
+    plt.gca().cla()
     
 clear_button.on_click(wrap_clearit)
 
